@@ -1,3 +1,4 @@
+// Developed by Ayushi Tiwari - Voxiary Project
 const API =
   window.location.hostname.includes("ngrok")
     ? "https://clustered-uncompromised-pearl.ngrok-free.dev"
