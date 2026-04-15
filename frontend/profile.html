@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Voxiary | MYSPACE</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+body{
+  background:#000;
+  color:#9ca3af;
+  font-family:'Inter',sans-serif;
+}
+
+.navbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:18px 40px;
+  border-bottom:1px solid #111;
+}
+
+.nav-left{
+  display:flex;
+  align-items:center;
+  gap:20px;
+}
+
+.app-title{
+  font-size:28px;
+  font-weight:600;
+  background-clip:linear-gradient(90deg,#6366f1,#8b5cf6);
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+
+.myspace{
+  font-size:16px;
+  color:#aaa;
+  cursor:pointer;
+}
+
+.profile-container{
+  max-width:800px;
+  margin:60px auto;
+  padding:40px;
+  background:#0a0a0a;
+  border:1px solid #111;
+  border-radius:16px;
+}
+
+.profile-header{
+  text-align:center;
+  margin-bottom:40px;
+}
+
+.profile-header h2{
+  color:#fff;
+  margin-bottom:10px;
+}
+
+.info-row{
+  display:flex;
+  justify-content:space-between;
+  padding:15px 0;
+  border-bottom:1px solid #111;
+}
+
+.info-label{
+  color:#666;
+}
+
+.info-value{
+  color:#fff;
+}
+
+.stats{
+  display:flex;
+  justify-content:space-between;
+  margin-top:40px;
+  gap:20px;
+}
+
+.stat-card{
+  flex:1;
+  padding:25px;
+  text-align:center;
+  background:#111;
+  border-radius:12px;
+  border:1px solid #222;
+}
+
+.stat-card h3{
+  font-size:28px;
+  color:#6366f1;
+  margin-bottom:5px;
+}
+
+.stat-card p{
+  font-size:14px;
+  color:#777;
+}
+
+    nav .right a {
+      color: #fff;
+      margin-right: 20px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    nav .right a:hover {
+      color: #aaa; /* Dark grey hover effect */
+    }
+
+nav a {
+  color: white;
+  margin-left: 16px;
+  text-decoration: none;
+}
+
+/* FIX NAV RIGHT LINKS COLOR */
+.nav-right a{
+  color: #fff !important;
+  margin-left: 24px;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.nav-right a:hover{
+  color: #aaa !important;
+}
+
+</style>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+
+<body>
+
+<div class="navbar">
+
+  <div class="nav-left">
+    <div class="app-title">Voxiary</div>
+    <div class="myspace">MYSPACE</div>
+  </div>
+
+  <div class="nav-right">
+    <a href="index.html"><i class="fa-solid fa-house"></i></a>
+    <a href="stories.html"><i class="fa-solid fa-book-open"></i></a>
+    <a href="about.html"><i class="fa-solid fa-circle-info"></i></a>
+  </div>
+
+</div>
+
+
+<div class="profile-container">
+
+  <div class="profile-header">
+    <h2>Your Space 🤍</h2>
+    <p>This is your private identity and activity summary.</p>
+  </div>
+
+  <div class="info-row">
+    <div class="info-label">Name</div>
+    <div class="info-value" id="userName">-</div>
+  </div>
+
+  <div class="info-row">
+    <div class="info-label">Mobile</div>
+    <div class="info-value" id="userMobile">-</div>
+  </div>
+
+  <div class="info-row">
+    <div class="info-label">Email</div>
+    <div class="info-value" id="userEmail">-</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat-card">
+      <h3 id="storyCount">0</h3>
+      <p>Stories Captured</p>
+    </div>
+<!-- MOOD ANALYTICS -->
+<div style="margin-top:50px;">
+
+  <h2 style="color:#fff; margin-bottom:20px;">📊 Mood Analytics</h2>
+
+  <canvas id="moodChart" style="max-width:400px;"></canvas>
+
+  <div id="moodSummary"
+       style="margin-top:20px; font-size:16px; color:#aaa;">
+  </div>
+
+</div>
+    <div class="stat-card">
+      <h3 id="momentCount">0</h3>
+      <p>Moments Captured</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+
+const API =
+  window.location.hostname.includes("ngrok")
+    ? "https://clustered-uncompromised-pearl.ngrok-free.dev"
+    : "http://127.0.0.1:8000";
+
+const LOGGED_IN_EMAIL = localStorage.getItem("userEmail");
+const TOKEN = localStorage.getItem("token");
+
+// 🔐 Block access if not logged in
+if (!LOGGED_IN_EMAIL || !TOKEN) {
+  localStorage.clear();
+  window.location.replace("login.html");
+}
+
+// ----------- USER INFO -----------
+function loadUserInfo(){
+
+  if(LOGGED_IN_EMAIL){
+    document.getElementById("userEmail").textContent = LOGGED_IN_EMAIL;
+    document.getElementById("userName").textContent = LOGGED_IN_EMAIL.split("@")[0];
+  }
+
+}
+
+
+// ----------- FETCH STORIES COUNT FROM BACKEND -----------
+async function updateStoryCount(){
+
+if(!TOKEN || !LOGGED_IN_EMAIL) return;
+
+
+  try{
+    const res = await fetch(`${API}/stories`,{
+  headers:{
+    "Authorization": "Bearer " + TOKEN
+  }
+});
+
+    if(res.ok){
+      const stories = await res.json();
+      document.getElementById("storyCount").textContent = stories.length;
+    }
+  }catch(err){
+    console.log("Story fetch failed");
+  }
+}
+
+
+// ----------- MOMENTS (LOCAL STORAGE) -----------
+function updateMomentCount(){
+  const moments = JSON.parse(localStorage.getItem("moments")) || [];
+  document.getElementById("momentCount").textContent = moments.length;
+}
+
+
+
+// AUTO REFRESH
+setInterval(() => {
+  updateStoryCount();
+  updateMomentCount();
+}, 2000);
+
+
+window.onload = function(){
+  loadUserInfo();
+  updateStoryCount();
+  updateMomentCount();
+  loadMoodAnalytics();
+};
+async function loadMoodAnalytics() {
+
+  try {
+    const res = await fetch(`${API}/stories`, {
+      headers: {
+        "Authorization": "Bearer " + TOKEN
+      }
+    });
+
+    if (!res.ok) return;
+
+    const stories = await res.json();
+
+    if (!stories.length) return;
+
+    // Count moods
+    const moodCount = {};
+
+    stories.forEach(story => {
+      const mood = (story.mood || "neutral").toLowerCase();
+      moodCount[mood] = (moodCount[mood] || 0) + 1;
+    });
+
+    const labels = Object.keys(moodCount);
+    const data = Object.values(moodCount);
+
+    // Create Pie Chart
+    new Chart(document.getElementById("moodChart"), {
+      type: "pie",
+      data: {
+        labels: labels,
+        datasets: [{
+          data: data,
+          backgroundColor: [
+            "#FFF9C4",
+            "#BBDEFB",
+            "#F8BBD0",
+            "#E1BEE7",
+            "#C8E6C9",
+            "#ff8a80"
+          ]
+        }]
+      }
+    });
+
+    // Find Most Frequent Mood
+    let topMood = labels[0];
+    let maxCount = moodCount[topMood];
+
+    labels.forEach(m => {
+      if (moodCount[m] > maxCount) {
+        topMood = m;
+        maxCount = moodCount[m];
+      }
+    });
+
+    const percentage = Math.round((maxCount / stories.length) * 100);
+
+    document.getElementById("moodSummary").innerText =
+      `You were ${topMood} ${percentage}% of the time 💜`;
+
+  } catch (err) {
+    console.log("Analytics load failed");
+  }
+}
+</script>
+
+
+</body>
+</html>

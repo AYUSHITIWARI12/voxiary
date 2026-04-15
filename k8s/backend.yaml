@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: narratik-backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: narratik-backend
+  template:
+    metadata:
+      labels:
+        app: narratik-backend
+    spec:
+      containers:
+      - name: narratik-backend
+        image: narratik-backend
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 8000

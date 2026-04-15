@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Voxiary | Stories</title>
+<!-- <link rel="stylesheet" href="css/style.css"> -->
+ <link rel="stylesheet" href="./css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<!-- 🔐 ENCRYPTION LIB -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+
+<style>
+body {
+  background: #000;
+  color: #fff;
+  font-family: Arial, sans-serif;
+}
+nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 32px;
+  border-bottom: 1px solid #333;
+}
+nav a {
+  color: white;
+  margin-left: 16px;
+  text-decoration: none;
+}
+.container {
+  padding: 32px;
+  max-width: 900px;
+  margin: auto;
+}
+
+.story-item button {
+  margin-left: 8px;
+  padding: 4px 10px;
+  background: #222;
+  color: #fff;
+  border: 1px solid #333;
+  cursor: pointer;
+}
+.story-editor {
+  border: 1px solid #333;
+  padding: 16px;
+  min-height: 260px;
+  background: #0b0b0b;
+  outline: none;
+}
+.save-btn {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background: #8b5cf6;
+  border: none;
+  color: white;
+  cursor: pointer;
+  border-radius: 4px;
+}
+.editor-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.edit-dropdown {
+  position: relative;
+}
+.edit-dropdown button {
+  background: #1f1f1f;
+  color: #fff;
+  border: 1px solid #333;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+.edit-menu {
+  position: absolute;
+  right: 0;
+  top: 36px;
+  background: #111;
+  border: 1px solid #333;
+  display: none;
+}
+.edit-menu button {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  color: #fff;
+  padding: 8px 12px;
+  text-align: left;
+}
+/* 🔲 STORY LIST FIX — SIMPLE & CLEAN */
+
+#storyList {
+  list-style: none;
+  padding: 0;
+  margin-top: 20px;
+}
+
+.story-item strong {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 16px;
+}
+
+.story-item button {
+  margin-right: 6px;
+  margin-top: 6px;
+}
+.story-item {
+  padding: 14px 16px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  transition: 0.3s ease;
+}
+
+/* 🌸 Pastel Mood Colors */
+.mood-happy {
+  background: #FFF9C4;
+}
+
+.mood-sad {
+  background: #BBDEFB;
+}
+
+.mood-anger {
+  background: #b52c3a;
+}
+
+.mood-love {
+  background: #F8BBD0;
+}
+
+.mood-excite {
+  background: #E1BEE7;
+}
+
+.mood-complain {
+  background: #C8E6C9;
+}
+
+.mood-neutral {
+  background: #c32b2b;
+}
+/* 🌸 Calendar Card */
+.calendar-card {
+  margin-top: 24px;
+  padding: 22px;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #111, #1a1a1a);
+  border: 1px solid #2a2a2a;
+  box-shadow: 0 0 25px rgba(139, 92, 246, 0.15);
+  transition: 0.4s ease;
+}
+
+.calendar-card:hover {
+  box-shadow: 0 0 35px rgba(139, 92, 246, 0.35);
+}
+
+.calendar-title {
+  font-size: 18px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  color: #c4b5fd;
+}
+
+.calendar-inputs {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.calendar-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.calendar-field label {
+  font-size: 13px;
+  opacity: 0.7;
+  margin-bottom: 6px;
+}
+
+.calendar-field input {
+  padding: 8px 12px;
+  background: #0b0b0b;
+  border: 1px solid #333;
+  color: #fff;
+  border-radius: 8px;
+  outline: none;
+  transition: 0.3s ease;
+}
+
+.calendar-field input:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 12px rgba(88, 72, 124, 0.5);
+}
+
+/* ✨ Clear Button */
+.clear-btn {
+  padding: 10px 18px;
+  background: linear-gradient(135deg, #5e2b97, #3d0066);
+  border: none;
+  border-radius: 12px;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s ease;
+  /* font-weight: 500; */
+}
+
+.clear-btn:hover {
+  transform: translateY(-2px);
+  box-shadow:0 6px 15px rgba(75, 0, 130, 0.4);
+}
+#storyList {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+}
+
+.story-item {
+  width: 80%;
+  max-width: 900px;
+}
+</style>
+</head>
+
+<body>
+
+<nav>
+  <strong>Voxiary</strong>
+
+  <div style="display:flex; align-items:center; gap:14px;">
+
+    <!-- 🔎 SEARCH FEATURE -->
+    <div style="display:flex; gap:8px; align-items:center;">
+      <input 
+        type="text" 
+        id="searchKeyword" 
+        placeholder="Search keyword..."
+        style="padding:6px 10px; background:#111; border:1px solid #333; color:#fff; border-radius:6px;"
+      >
+
+      <select 
+        id="searchMood"
+        style="padding:6px 10px; background:#111; border:1px solid #333; color:#fff; border-radius:6px;"
+      >
+        <option value="">All Moods</option>
+        <option value="happy">Happy</option>
+        <option value="sad">Sad</option>
+        <option value="love">Love</option>
+        <option value="anger">Anger</option>
+        <option value="excite">Excite</option>
+        <option value="complain">Complain</option>
+        <option value="neutral">Neutral</option>
+      </select>
+    </div>
+
+    <a href="index.html"><i class="fa-solid fa-house"></i></a>
+    <a href="stories.html"><i class="fa-solid fa-book-open"></i></a>
+    <a href="about.html"><i class="fa-solid fa-circle-info"></i></a>
+    <a href="profile.html"><i class="fa-solid fa-user"></i></a>
+
+  </div>
+</nav>
+
+<div class="container" id="storyListView">
+  <h2>📚 My Chapters</h2>
+<!-- 🌸 Aesthetic Calendar Filter -->
+<div class="calendar-card">
+  <div class="calendar-title">📅 Filter Your Memories</div>
+
+  <div class="calendar-inputs">
+    <div class="calendar-field">
+      <label>Day</label>
+      <input type="date" id="dateFilter">
+    </div>
+
+    <div class="calendar-field">
+      <label>Month</label>
+      <input type="month" id="monthFilter">
+    </div>
+
+    <button class="clear-btn" onclick="clearFilters()">Clear</button>
+  </div>
+</div>
+<ul id="storyList"></ul>
+
+<h2 id="favTitle" style="margin-top:30px; display:none;">⭐ Favorites</h2>
+<ul id="favoriteList"></ul>
+</div>
+
+<div class="container" id="editorView" style="display:none;">
+  <button onclick="goBack()">⬅ Back</button>
+
+  <div class="editor-header">
+    <h2 id="storyTitle"></h2>
+    <div class="edit-dropdown">
+      <button onclick="toggleEditMenu()">✏️ Edit</button>
+      <div id="editMenu" class="edit-menu">
+        <button onclick="formatText('bold')">Bold</button>
+        <button onclick="formatText('italic')">Italic</button>
+        <button onclick="formatText('underline')">Underline</button>
+        <button onclick="formatText('removeFormat')">Clear</button>
+        <button onclick="triggerImageUpload()">📸Memory</button>
+      </div>
+    </div>
+    <select id="ambienceSelect" 
+        style="margin-left:15px; padding:6px; background:#111; color:#fff; border:1px solid #333; border-radius:6px;">
+  <option value="">Read with Music</option>
+  <option value="rain">🌧 Rain</option>
+  <option value="cafe">☕ Cafe</option>
+  <option value="piano">🎹 Piano</option>
+</select>
+
+
+<button onclick="toggleAmbience()" 
+        style="margin-left:10px; padding:6px 12px; background:#8b5cf6; border:none; border-radius:6px; color:white;">
+  🎵 Toggle
+</button>
+  </div>
+
+  <div id="storyEditor" class="story-editor" contenteditable="true"></div>
+  <!-- 📸 POLAROID IMAGE PREVIEW -->
+<div id="polaroidWrapper" style="margin-top:20px; display:none; position:relative; width:120px;">
+  
+  <div style="
+    background:white;
+    padding:6px 6px 18px 6px;
+    border-radius:6px;
+    box-shadow:0 8px 18px rgba(0,0,0,0.5);
+    transform:rotate(-4deg);
+  ">
+    <img id="storyImagePreview" 
+         style="width:100%; border-radius:4px; object-fit:cover;">
+  </div>
+
+  <!-- 📌 Pin -->
+  <div style="
+    width:18px;
+    height:18px;
+    background:#ff4d6d;
+    border-radius:50%;
+    position:absolute;
+    top:-8px;
+    left:50%;
+    transform:translateX(-50%);
+    box-shadow:0 2px 6px rgba(0,0,0,0.4);
+  "></div>
+
+</div>
+  <button class="save-btn" onclick="saveStory()">💾 Save</button>
+</div>
+
+<script>
+  let currentAmbience = null;
+
+const ambienceMap = {
+  rain: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+  cafe: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+  piano: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"
+};
+function toggleAmbience() {
+  const audio = document.getElementById("bgAudio");
+  const selected = document.getElementById("ambienceSelect").value;
+
+  if (!selected) {
+    audio.pause();
+    currentAmbience = null;
+    return;
+  }
+
+  if (audio.src.includes(ambienceMap[selected]) && !audio.paused) {
+    audio.pause();
+  } else {
+    audio.src = ambienceMap[selected];
+    audio.volume = 0.3;   // soft volume
+    audio.play();
+    currentAmbience = selected;
+  }
+}
+  let storyImage = null;
+async function triggerImageUpload() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+
+    const video = document.createElement("video");
+    video.srcObject = stream;
+    video.play();
+
+    const captureBtn = document.createElement("button");
+    captureBtn.innerText = "Capture 📸";
+    captureBtn.style.marginTop = "10px";
+
+    const container = document.createElement("div");
+    container.appendChild(video);
+    container.appendChild(captureBtn);
+    document.body.appendChild(container);
+
+    captureBtn.onclick = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0);
+
+      storyImage = canvas.toDataURL("image/png");
+
+      document.getElementById("storyImagePreview").src = storyImage;
+      document.getElementById("polaroidWrapper").style.display = "block";
+
+      stream.getTracks().forEach(track => track.stop());
+      document.body.removeChild(container);
+    };
+
+  } catch (err) {
+    alert("Camera access denied or not supported.");
+    console.error(err);
+  }
+}
+const API = "http://127.0.0.1:8000";
+let currentMood = "neutral";
+function setMood(mood) {
+  currentMood = mood;
+  console.log("Selected Mood:", currentMood);
+}
+/* 🔐 AUTH */
+const email = localStorage.getItem("userEmail");
+if (!email) {
+  window.location.href = "login.html";
+}
+
+/* 🔐 ENCRYPTION */
+function getUserKey() {
+  return email + "_NARRATIK_PRIVATE_KEY";
+}
+function encryptText(text) {
+  return CryptoJS.AES.encrypt(text, getUserKey()).toString();
+}
+function decryptText(cipher) {
+  const bytes = CryptoJS.AES.decrypt(cipher, getUserKey());
+  return bytes.toString(CryptoJS.enc.Utf8);
+}
+
+const storyList = document.getElementById("storyList");
+const storyListView = document.getElementById("storyListView");
+const editorView = document.getElementById("editorView");
+const editor = document.getElementById("storyEditor");
+const titleEl = document.getElementById("storyTitle");
+
+let currentStoryId = null;
+function getMoodEmoji(mood) {
+  const emojis = {
+    happy: "😊",
+    sad: "😢",
+    motivational: "💪",
+    romantic: "❤️",
+    horror: "👻",
+    funny: "😂"
+  };
+  return emojis[mood] || "✨";
+}
+const favoriteList = document.getElementById("favoriteList");
+favoriteList.innerHTML = "";
+/* LOAD */
+async function loadStories() {
+  
+  storyList.innerHTML = "";
+favoriteList.innerHTML = "";
+document.getElementById("favTitle").style.display = "none";
+  const res = await fetch(`${API}/stories`, {
+    headers: {
+      "Authorization": "Bearer " + localStorage.getItem("token")
+    }
+  });
+
+  const stories = await res.json();
+
+  if (!stories.length) {
+    storyList.innerHTML = "<p>No stories yet.</p>";
+    return;
+  }
+  // 📅 Apply Filters
+const selectedDate = document.getElementById("dateFilter").value;
+const selectedMonth = document.getElementById("monthFilter").value;
+
+let filteredStories = stories;
+
+if (selectedDate) {
+  filteredStories = stories.filter(s => 
+    s.created_at.startsWith(selectedDate)
+  );
+} else if (selectedMonth) {
+  filteredStories = stories.filter(s => 
+    s.created_at.startsWith(selectedMonth)
+  );
+}
+// 🔎 SEARCH FILTER
+const keyword = document.getElementById("searchKeyword").value.toLowerCase();
+const moodSearch = document.getElementById("searchMood").value.toLowerCase();
+
+if (keyword) {
+  filteredStories = filteredStories.filter(s =>
+    (s.title && s.title.toLowerCase().includes(keyword))
+  );
+}
+
+if (moodSearch) {
+  filteredStories = filteredStories.filter(s =>
+    (s.mood && s.mood.toLowerCase() === moodSearch)
+  );
+}
+   filteredStories.forEach(story => {
+  const li = document.createElement("li");
+
+  const moodMap = {
+    happy: "happy",
+    sad: "sad",
+    anger: "anger",
+    love: "love",
+    excite: "excite",
+    complain: "complain",
+    motivational: "happy",
+    romantic: "love",
+    horror: "anger",
+    funny: "happy"
+  };
+
+  const moodKey = moodMap[(story.mood || "").toLowerCase()] || "neutral";
+
+  li.className = `story-item mood-${moodKey}`;
+
+  li.innerHTML = `
+  <strong>${story.title}</strong>
+
+  <div style="margin:6px 0; font-size:14px; opacity:0.7;">
+    Mood: ${story.mood || "neutral"}
+  </div>
+
+  ${story.image ? `
+  <div style="margin:10px 0; position:relative; width:70px;">
+    <div style="
+      background:white;
+      padding:4px 4px 12px 4px;
+      border-radius:4px;
+      box-shadow:0 4px 10px rgba(0,0,0,0.4);
+      transform:rotate(-3deg);
+    ">
+      <img src="${story.image}" 
+           style="width:100%; border-radius:3px; object-fit:cover;">
+    </div>
+
+    <div style="
+      width:12px;
+      height:12px;
+      background:#ff4d6d;
+      border-radius:50%;
+      position:absolute;
+      top:-6px;
+      left:50%;
+      transform:translateX(-50%);
+    "></div>
+  </div>
+  ` : ""}
+${story.insight ? `
+  <div style="
+    margin-top:10px;
+    font-size:13px;
+    font-style:italic;
+    color:#444;
+    background:rgba(255,255,255,0.6);
+    padding:8px;
+    border-radius:8px;
+  ">
+    💡 ${story.insight}
+  </div>
+` : ""}
+  <button onclick="openStory(${story.id}, ${story.is_locked})">Open</button>
+
+  <button onclick="toggleFavorite(${story.id})">
+    ${isFavorite(story.id) ? "⭐" : "☆"}
+  </button>
+
+  <button onclick="lockStory(${story.id})">Lock 🔐</button>
+
+  <button onclick="renameStory(${story.id}, '${story.title.replace(/'/g,"\\'")}')">Rename</button>
+
+  <button onclick="deleteStory(${story.id})">Delete</button>
+`;
+  storyList.appendChild(li);
+  if (isFavorite(story.id)) {
+  document.getElementById("favTitle").style.display = "block";
+
+  const favClone = li.cloneNode(true);
+  favoriteList.appendChild(favClone);
+}
+});
+}
+
+
+async function openStory(id, isLocked = false) {
+
+  // 🔐 If locked → verify PIN first
+  if (isLocked) {
+    const pin = prompt("🔐 Enter your 4-digit PIN");
+
+    if (!pin) return;
+
+    const res = await fetch(`${API}/verify-pin/${id}`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": "Bearer " + localStorage.getItem("token")
+  },
+  body: JSON.stringify({ pin: pin })
+
+});
+
+    const data = await res.json();
+
+    if (!data.success) {
+      alert("❌ Wrong PIN!");
+      return;
+    }
+    currentAmbience = data.ambience || null;
+
+    if (currentAmbience) {
+      document.getElementById("ambienceSelect").value = currentAmbience;
+    }
+  }
+  
+
+  // ✅ ORIGINAL WORKING CODE (RESTORED)
+  const res = await fetch(`${API}/story/${id}`, {
+    headers: {
+      "Authorization": "Bearer " + localStorage.getItem("token")
+    }
+  });
+
+  const data = await res.json();
+
+  currentStoryId = id;
+  currentMood = data.mood || "neutral";
+
+  titleEl.innerText = data.title + " " + getMoodEmoji(currentMood);
+  editor.innerHTML = decryptText(data.content || "");
+  storyImage = data.image || null;
+
+if (storyImage) {
+  document.getElementById("storyImagePreview").src = storyImage;
+  document.getElementById("polaroidWrapper").style.display = "block";
+} else {
+  document.getElementById("polaroidWrapper").style.display = "none";
+}
+
+  storyListView.style.display = "none";
+  editorView.style.display = "block";
+}
+/* SAVE */
+async function saveStory() {
+  await fetch(`${API}/story/${currentStoryId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + localStorage.getItem("token")
+    },
+
+body: JSON.stringify({
+  content: encryptText(editor.innerHTML),
+  mood: currentMood,
+  image: storyImage,
+  ambience: document.getElementById("ambienceSelect").value
+})
+  });
+  alert("Story saved ✅");
+}
+
+/* OTHER FUNCTIONS (UNCHANGED) */
+async function renameStory(id, oldTitle) {
+  const newTitle = prompt("Enter new title", oldTitle);
+  if (!newTitle) return;
+
+  const token = localStorage.getItem("token");
+
+  const res = await fetch(`${API}/story/${id}/rename`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + token
+    },
+    body: JSON.stringify({ title: newTitle })
+  });
+
+  if (!res.ok) {
+    alert("❌ Unauthorized. Please login again.");
+    return;
+  }
+
+  loadStories();
+}
+
+async function deleteStory(id) {
+  if (!confirm("Delete this story permanently?")) return;
+
+  const token = localStorage.getItem("token");
+
+ const res = await fetch(`${API}/story/${id}`, {
+    method: "DELETE",
+    headers: {
+      "Authorization": "Bearer " + token
+    }
+  });
+
+  if (!res.ok) {
+    alert("❌ Unauthorized. Please login again.");
+    return;
+  }
+
+  loadStories();
+}
+async function lockStory(id) {
+  const pin = prompt("Enter 4-digit PIN to lock this story:");
+
+  if (!pin) return;
+
+  if (pin.length !== 4 || isNaN(pin)) {
+    alert("PIN must be exactly 4 digits");
+    return;
+  }
+
+  await fetch(`${API}/story/${id}/lock`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + localStorage.getItem("token")
+    },
+    body: JSON.stringify({ pin: pin })
+  });
+
+  alert("Story locked 🔐");
+
+  loadStories();   // 🔥 THIS IS IMPORTANT
+}
+
+function goBack() {
+  editorView.style.display = "none";
+  storyListView.style.display = "block";
+  loadStories();
+}
+
+function toggleEditMenu() {
+  const menu = document.getElementById("editMenu");
+  menu.style.display = menu.style.display === "block" ? "none" : "block";
+}
+function formatText(cmd) {
+  document.execCommand(cmd);
+  document.getElementById("editMenu").style.display = "none";
+}
+document.getElementById("dateFilter").addEventListener("change", loadStories);
+document.getElementById("monthFilter").addEventListener("change", loadStories);
+document.getElementById("searchKeyword").addEventListener("input", loadStories);
+document.getElementById("searchMood").addEventListener("change", loadStories);
+
+function clearFilters() {
+  document.getElementById("dateFilter").value = "";
+  document.getElementById("monthFilter").value = "";
+  loadStories();
+}
+function getFavorites() {
+  return JSON.parse(localStorage.getItem("favorites") || "[]");
+}
+
+function isFavorite(id) {
+  return getFavorites().includes(id);
+}
+
+function toggleFavorite(id) {
+  let favorites = getFavorites();
+
+  if (favorites.includes(id)) {
+    favorites = favorites.filter(f => f !== id);
+  } else {
+    favorites.push(id);
+  }
+
+  localStorage.setItem("favorites", JSON.stringify(favorites));
+  loadStories();
+}
+
+loadStories();
+
+</script>
+<input type="file" 
+       id="imageInput" 
+       accept="image/*" 
+       capture="environment" 
+       style="display:none;">
+
+<audio id="bgAudio" loop></audio>
+</body>
+</html>

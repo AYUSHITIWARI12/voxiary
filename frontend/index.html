@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Voxiary | Home</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="manifest" href="pwa/manifest.json">
+  <meta name="theme-color" content="#000000">
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+</head>
+
+<body>
+<script>
+function toggleTheme() {
+
+  const body = document.body;
+  const bubble = document.getElementById("themeBubble");
+
+  body.classList.toggle("light-theme");
+
+  if(body.classList.contains("light-theme")){
+    bubble.innerText = "Light";
+    localStorage.setItem("theme","light");
+  } else {
+    bubble.innerText = "Dark";
+    localStorage.setItem("theme","dark");
+  }
+}
+
+/* Load saved theme */
+window.onload = function(){
+  const savedTheme = localStorage.getItem("theme");
+
+  if(savedTheme === "light"){
+    document.body.classList.add("light-theme");
+    document.getElementById("themeBubble").innerText = "Light";
+  }
+}
+
+const LOGGED_IN_EMAIL = localStorage.getItem("userEmail");
+if (!LOGGED_IN_EMAIL || !localStorage.getItem("token")) {
+  window.location.href = "login.html";
+}
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/pwa/service-worker.js");
+  });
+}
+</script>
+
+<nav class="navbar">
+  
+  <a href="profile.html" class="myspace-link">MYSPACE</a>
+
+  <div class="nav-title">
+    Voxiary
+  </div>
+
+  <!-- POWER BUTTON -->
+  <div class="power-btn" onclick="logout()">
+    <i class="fa-solid fa-power-off"></i>
+  </div>
+
+</nav>
+
+<div class="main">
+  <div class="pad-wrapper">
+
+    <!-- LEFT BUBBLES -->
+    <div onclick="toggleTheme()" id="themeBubble"
+     class="nav-bubble bubble-home">
+  Dark
+</div>
+    <a href="about.html" class="nav-bubble bubble-about">About</a>
+
+        <!-- LANGUAGE BUBBLE -->
+    <div onclick="toggleLanguage()" id="langBubble"
+         class="nav-bubble bubble-language">English</div>
+
+    <!-- RIGHT BUBBLES -->
+    <a href="stories.html" class="nav-bubble bubble-stories">Stories</a>
+    <a href="moments.html" class="nav-bubble bubble-moments">Moments</a>
+    <!-- <a href="login.html" class="nav-bubble bubble-logout">Logout</a> -->
+     <!-- MOOD BUBBLE -->
+<div class="nav-bubble bubble-theme" onclick="toggleMoodWheel()">
+  Mood
+</div>
+
+<!-- MOOD WHEEL -->
+<div id="moodWheel" class="mood-wheel">
+  <div class="mood-option anger" onclick="selectMood('anger')">😡</div>
+  <div class="mood-option happy" onclick="selectMood('happy')">😊</div>
+  <div class="mood-option sad" onclick="selectMood('sad')">😔</div>
+  <div class="mood-option complain" onclick="selectMood('complain')">😤</div>
+  <div class="mood-option love" onclick="selectMood('love')">❤️</div>
+  <div class="mood-option excite" onclick="selectMood('excite')">🤩</div>
+</div>
+     
+
+
+
+    <div class="pad-prompt">
+      Hi there 🤍 You can share whatever you’re feeling right now.
+    </div>
+
+    <div id="pad" class="pad" contenteditable="true"
+         data-placeholder="Start speaking… your words will appear here."></div>
+
+    <div class="save-area">
+      <button onclick="openModal()">💾 Save Story</button>
+    </div>
+
+  </div>
+</div>
+
+<div class="mic-container">
+  <div id="micBtn" class="mic-btn">
+    <i class="fa-solid fa-microphone"></i>
+  </div>
+</div>
+
+<div id="saveModal" class="modal">
+  <div class="modal-box">
+    <h2>Save Story</h2>
+    <input type="text" id="storyNameInput" placeholder="Story title">
+    
+    <div class="modal-actions">
+      <button onclick="closeModal()">Cancel</button>
+      <button onclick="saveHomeStory()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+window.currentLanguage = "en-US";
+
+function toggleLanguage() {
+  const bubble = document.getElementById("langBubble");
+  if (window.currentLanguage === "en-US") {
+    window.currentLanguage = "hi-IN";
+    bubble.innerText = "Hindi";
+  } else {
+    window.currentLanguage = "en-US";
+    bubble.innerText = "English";
+  }
+}
+</script>
+
+<script src="js/mic.js"></script>
+
+<script>
+const API = "http://127.0.0.1:8000";
+let currentMood = "neutral";
+
+function getUserKey() {
+  return LOGGED_IN_EMAIL + "_NARRATIK_PRIVATE_KEY";
+}
+
+function encryptText(text) {
+  return CryptoJS.AES.encrypt(text, getUserKey()).toString();
+}
+
+function openModal() {
+  document.getElementById("saveModal").style.display = "flex";
+}
+
+function closeModal() {
+  document.getElementById("saveModal").style.display = "none";
+  document.getElementById("storyNameInput").value = "";
+}
+
+async function saveHomeStory() {
+  const title = storyNameInput.value.trim();
+  const rawContent = pad.innerText.trim();
+
+  if (!title || !rawContent) {
+    alert("Title & content required");
+    return;
+  }
+
+  const res = await fetch(`${API}/stories`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + localStorage.getItem("token")
+    },
+    body: JSON.stringify({
+  email: LOGGED_IN_EMAIL,
+  title: title,
+  content: encryptText(rawContent),
+ mood: currentMood
+})
+  });
+
+  if (res.ok) {
+    alert("Story saved ✅");
+    closeModal();
+    pad.innerText = "";
+  } else {
+    alert("Save failed ❌");
+  }
+}
+function logout() {
+  localStorage.removeItem("token");
+  localStorage.removeItem("userEmail");
+  window.location.href = "login.html";
+}
+function toggleMoodWheel() {
+  document.getElementById("moodWheel").classList.toggle("active");
+}
+
+function selectMood(mood) {
+  const pad = document.getElementById("pad");
+
+  currentMood = mood;   // ✅ ADD THIS LINE
+
+  pad.classList.remove(
+    "anger-bg",
+    "happy-bg",
+    "sad-bg",
+    "complain-bg",
+    "love-bg",
+    "excite-bg"
+  );
+
+  pad.classList.add(mood + "-bg");
+
+  document.getElementById("moodWheel").classList.remove("active");
+}
+</script>
+
+</body>
+</html>

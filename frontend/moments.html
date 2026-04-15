@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Voxiary | Moments</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+body{
+  background:#000;
+  color:#9ca3af;
+  font-family:'Inter',sans-serif;
+}
+
+.moments-container{
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 30px;
+  text-align: center;
+}
+
+.moments-text{
+  max-width:650px;
+  margin:auto;
+  line-height:1.8;
+  margin-bottom:40px;
+}
+
+video, canvas {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  width:340px;
+  height:260px;
+  border-radius:12px;
+  border:1px solid #333;
+  background:#000;
+  margin-bottom:20px;
+}
+
+
+
+
+.actions button{
+  padding:10px 18px;
+  margin:8px;
+  background:#111;
+  border:1px solid #333;
+  color:#fff;
+  border-radius:8px;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+.actions button:hover{
+  background:#1a1a1a;
+}
+
+.gallery{
+  margin-top:50px;
+  display:flex;
+  flex-wrap:wrap;
+  gap:20px;
+  justify-content:center;
+}
+
+.memory-item{
+  text-align:center;
+}
+
+.memory-item img{
+  width:150px;
+  border-radius:10px;
+  border:2px solid transparent;
+  cursor:pointer;
+  transition:0.3s;
+}
+
+.memory-item img.selected{
+  border:2px solid #6366f1;
+}
+
+.memory-date{
+  font-size:12px;
+  margin-top:6px;
+  color:#777;
+}
+nav {
+  display: flex;
+  justify-content: space-between;
+  padding: 16px 32px;
+  border-bottom: 1px solid #333;
+   }
+nav a {
+  color: white;
+  margin-left: 16px;
+  text-decoration: none;
+}
+</style>
+</head>
+
+<body>
+
+<nav>
+  <strong>Voxiary</strong>
+  <div>
+    <a href="index.html"><i class="fa-solid fa-house"></i></a>
+    <a href="stories.html"><i class="fa-solid fa-book-open"></i></a>
+    <a href="about.html"><i class="fa-solid fa-circle-info"></i></a>
+    <a href="profile.html"><i class="fa-solid fa-user"></i></a>
+  </div>
+</nav>
+<div class="moments-container">
+
+<div class="moments-text">
+Capture your emotion 🤍 <br><br>
+Smile. Cry. Be happy. Or sob in front of me — I won’t judge you.  
+You can delete this later. Or you can create a memory here.
+</div>
+
+<video id="video" autoplay></video>
+<canvas id="canvas" style="display:none;"></canvas>
+
+<div class="actions">
+<button id="openBtn">📷 Open Camera</button>
+<button id="captureBtn">✨ Capture</button>
+<button id="saveBtn">💾 Save</button>
+<button id="deleteBtn">🗑 Delete Selected</button>
+</div>
+
+<div class="gallery" id="gallery"></div>
+
+</div>
+
+<script>
+const video = document.getElementById("video");
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const gallery = document.getElementById("gallery");
+
+let stream = null;
+let tempImage = null;
+let selectedIndex = null;
+
+document.getElementById("openBtn").addEventListener("click", async () => {
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ video:true });
+    video.srcObject = stream;
+  }catch{
+    alert("Camera permission denied.");
+  }
+});
+
+document.getElementById("captureBtn").addEventListener("click", () => {
+  if(!stream){
+    alert("Open camera first.");
+    return;
+  }
+
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+
+  ctx.drawImage(video,0,0);
+  tempImage = canvas.toDataURL("image/png");
+
+  canvas.style.display="block";
+  video.style.display="none";
+});
+
+document.getElementById("saveBtn").addEventListener("click", () => {
+  if(!tempImage){
+    alert("Capture a photo first.");
+    return;
+  }
+
+  const confirmSave = confirm("Do you want to save this memory?");
+  if(!confirmSave) return;
+
+  const memories = JSON.parse(localStorage.getItem("moments")) || [];
+
+  memories.push({
+    image: tempImage,
+    date: new Date().toLocaleString()
+  });
+
+  localStorage.setItem("moments", JSON.stringify(memories));
+
+  tempImage = null;
+  canvas.style.display="none";
+  video.style.display="block";
+
+  displayMemories();
+});
+
+document.getElementById("deleteBtn").addEventListener("click", () => {
+  if(selectedIndex === null){
+    alert("Select a memory to delete.");
+    return;
+  }
+
+  const confirmDelete = confirm("Delete this memory permanently?");
+  if(!confirmDelete) return;
+
+  const memories = JSON.parse(localStorage.getItem("moments")) || [];
+  memories.splice(selectedIndex,1);
+  localStorage.setItem("moments", JSON.stringify(memories));
+
+  selectedIndex = null;
+  displayMemories();
+});
+
+function displayMemories(){
+  gallery.innerHTML="";
+  const memories = JSON.parse(localStorage.getItem("moments")) || [];
+
+  memories.forEach((memory,index)=>{
+    const wrapper = document.createElement("div");
+    wrapper.className="memory-item";
+
+    const img = document.createElement("img");
+    img.src = memory.image;
+
+    img.addEventListener("click",()=>{
+      document.querySelectorAll(".memory-item img")
+        .forEach(i=>i.classList.remove("selected"));
+
+      img.classList.add("selected");
+      selectedIndex = index;
+    });
+
+    const date = document.createElement("div");
+    date.className="memory-date";
+    date.textContent = memory.date;
+
+    wrapper.appendChild(img);
+    wrapper.appendChild(date);
+    gallery.appendChild(wrapper);
+  });
+}
+
+window.onload = displayMemories;
+</script>
+
+</body>
+</html>
