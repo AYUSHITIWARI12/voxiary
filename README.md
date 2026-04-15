@@ -18,26 +18,37 @@ Voxiary is a full-stack journaling application that allows users to express thei
 
 ## 🛠️ Tech Stack
 
-### Frontend
+### 💻 Frontend
 - HTML
 - CSS
 - JavaScript
-- CryptoJS (Encryption)
 
-### Backend
-- FastAPI (Python)
+### ⚙️ Backend
+- Python (FastAPI)
+- REST APIs
+- JWT Authentication
+
+### 🗄️ Database
 - SQLite
 
-### Authentication & Security
-- JWT Authentication
-- Google OAuth
-- AES Encryption
+### 🔐 Security
+- AES Encryption (CryptoJS)
+- PIN-based Story Lock System
 
-### DevOps & Tools
+### 🎙️ Features
+- Speech-to-Text (Voice input for thoughts)
+- Mood-based journaling system
+- Secure private story storage
+
+### 🤖 AI (Planned / Integrated)
+- Mood detection from text
+- Smart writing suggestions
+- Emotion analysis
+
+### 🐳 DevOps & Deployment
+- Docker (Containerization)
+- Kubernetes (Container Orchestration)
 - Git & GitHub
-- Postman
-- Docker 
-- Kubernetes
 
 ---
 
