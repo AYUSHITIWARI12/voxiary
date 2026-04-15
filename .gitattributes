@@ -1,7 +1,2 @@
 frontend/* linguist-vendored
-*.html linguist-vendored
-*.css linguist-vendored
-*.js linguist-vendored
 
-*.py linguist-detectable=true
-backend/* linguist-detectable=true
