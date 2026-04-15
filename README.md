@@ -36,7 +36,8 @@ Voxiary is a full-stack journaling application that allows users to express thei
 ### DevOps & Tools
 - Git & GitHub
 - Postman
-- Docker (if used)
+- Docker 
+- Kubernetes
 
 ---
 
